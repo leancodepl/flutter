@@ -1136,6 +1136,23 @@ class WidgetTester extends WidgetController implements HitTestDispatcher, Ticker
       // on the EditableTextState, which itself eventually calls TextInput.attach
       // to establish the connection.
       binding.focusedEditable = editable;
+
+      // focusedEditable had to be set to null, when the EditableText lost focus.
+      void removeFocusedEditable() {
+        final bool isPrimaryFocusEditableText =
+            FocusManager.instance.primaryFocus?.context
+                ?.findAncestorStateOfType<EditableTextState>() !=
+            null;
+
+        if (isPrimaryFocusEditableText) {
+          binding.focusedEditable = null;
+        }
+
+        FocusManager.instance.removeListener(removeFocusedEditable);
+      }
+
+      FocusManager.instance.addListener(removeFocusedEditable);
+
       await pump();
     });
   }
