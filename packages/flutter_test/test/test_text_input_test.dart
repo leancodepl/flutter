@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'utils/text_fields_screen.dart' show TextFieldsScreen;
+
 void main() {
   testWidgets('enterText works', (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -33,7 +35,9 @@ void main() {
     expect(state.textEditingValue.selection.baseOffset, 17);
   });
 
-  testWidgets('receiveAction() forwards exception when exception occurs during action processing', (WidgetTester tester) async {
+  testWidgets('receiveAction() forwards exception when exception occurs during action processing', (
+    WidgetTester tester,
+  ) async {
     // Setup a widget that can receive focus so that we can open the keyboard.
     const Widget widget = MaterialApp(
       home: Material(
@@ -98,4 +102,46 @@ void main() {
       expect(selectorNames, isNull);
     }
   }, variant: TargetPlatformVariant.all());
+
+  testWidgets('enterText into same field twice', (WidgetTester tester) async {
+    await tester.pumpWidget(const TextFieldsScreen());
+
+    await tester.enterText(find.byKey(const Key('textField1')), 'User');
+
+    expect(find.text('User'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('buttonFocus')));
+    await tester.pump();
+    expect(find.text('User'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('textField1')), 'User2');
+    expect(find.text('User'), findsNothing);
+    expect(find.text('User2'), findsOneWidget);
+  });
+
+  testWidgets('can enter text into same field, after unfocusing', (WidgetTester tester) async {
+    await tester.pumpWidget(const TextFieldsScreen());
+
+    await tester.enterText(find.byKey(const Key('textField1')), 'User2');
+    expect(find.text('User2'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('buttonUnfocus')));
+
+    await tester.enterText(find.byKey(const Key('textField1')), 'User3');
+    expect(find.text('User2'), findsNothing);
+    expect(find.text('User3'), findsOneWidget);
+  });
+
+  testWidgets('can enter text into same field, after entering text in another field', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const TextFieldsScreen());
+
+    await tester.enterText(find.byKey(const Key('textField1')), 'User3');
+    expect(find.text('User3'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('textField2')), 'User4');
+    await tester.enterText(find.byKey(const Key('textField1')), 'User5');
+    expect(find.text('User3'), findsNothing);
+    expect(find.text('User4'), findsOneWidget);
+    expect(find.text('User5'), findsOneWidget);
+  });
 }
